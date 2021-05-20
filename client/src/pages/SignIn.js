@@ -80,6 +80,7 @@ const SignIn = () => {
     const [failed, setFailed] = useState("");
 
     const validate = () => {
+        //console.log(validEmail.test(emailLog));
         if (emailLog === "" || passwordLog === "") {
             return "empty";
         } else if (!validEmail.test(emailLog)) {
@@ -108,7 +109,15 @@ const SignIn = () => {
                 email: emailLog,
                 password: passwordLog,
             }).then((response) => {
-                console.log(response.data);
+                if (response.data.message) {
+                    setFailed(response.data.message);
+                    displayFail();
+                    console.log(response.data.message);
+                } else {
+                    //setFailed(response.data.accessToken);
+                    //displayFail();
+                    console.log(response);
+                }
             });
         }
     };
