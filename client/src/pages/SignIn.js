@@ -1,3 +1,5 @@
+import React, { useState, useContext } from "react";
+import { Link, Redirect } from "react-router-dom";
 import {
     Container,
     createMuiTheme,
@@ -8,10 +10,10 @@ import {
     Typography,
     Button,
 } from "@material-ui/core";
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import Axios from "axios";
+
 import { validEmail } from "../components/regex";
+import { publicFetch } from "../util/fetch.js";
+import { AuthContext } from "../context/AuthContext";
 
 const theme = createMuiTheme({
     palette: {
@@ -75,63 +77,79 @@ const useStyle = makeStyles({
 });
 
 const SignIn = () => {
-    const [emailLog, setEmailLog] = useState("");
-    const [passwordLog, setPasswordLog] = useState("");
-    const [failed, setFailed] = useState("");
+    const authContext = useContext(AuthContext);
+    const [email, setEmail] = useState();
+    const [password, setPassword] = useState();
+
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const [redirectOnLogin, setRedirectOnLogin] = useState(false);
+
+    const handleEmailChange = (e) => {
+        setEmail(e.target.value);
+    };
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+    };
 
     const validate = () => {
-        //console.log(validEmail.test(emailLog));
-        if (emailLog === "" || passwordLog === "") {
-            return "empty";
-        } else if (!validEmail.test(emailLog)) {
-            return "invalid email";
+        if (!email) {
+            setErrorMessage("Email is required");
+            return false;
         }
+        if (!password) {
+            setErrorMessage("Password is required");
+            return false;
+        }
+        if (!validEmail.test(email)) {
+            setErrorMessage("Invalid email");
+            return false;
+        }
+        return true;
     };
 
-    const displayFail = () => {
-        setTimeout(() => {
-            document.getElementById("failed").style.display = "block";
-        }, 0);
-        setTimeout(() => {
-            document.getElementById("failed").style.display = "none";
-        }, 2000);
+    const clearFields = () => {
+        setEmail("");
+        setPassword("");
+        setErrorMessage("");
     };
 
-    const loginUser = () => {
-        if (validate() === "empty") {
-            setFailed("All Fields are required");
-            displayFail();
-        } else if (validate() === "invalid email") {
-            setFailed("Invalid Email Id");
-            displayFail();
-        } else {
-            Axios.post("http://localhost:3001/api/login", {
-                email: emailLog,
-                password: passwordLog,
-            }).then((response) => {
-                if (response.data.message) {
-                    setFailed(response.data.message);
-                    displayFail();
-                    console.log(response.data.message);
-                } else {
-                    //setFailed(response.data.accessToken);
-                    //displayFail();
-                    console.log(response);
-                }
-            });
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        const isValid = validate();
+        if (isValid) {
+            const credentials = {
+                email,
+                password,
+            };
+            try {
+                const { data } = await publicFetch.post("signin", credentials);
+                authContext.setAuthState(data);
+                console.log(data);
+                setSuccessMessage(data.message);
+                clearFields();
+                setTimeout(() => {
+                    setRedirectOnLogin(true);
+                }, 1000);
+            } catch (error) {}
         }
     };
 
     const classes = useStyle();
     return (
         <React.Fragment>
+            {authContext.isAuthenticated() && <Redirect to="/dashboard" />}
+
+            {redirectOnLogin && <Redirect to="/dashboard" />}
             <Typography
                 id="failed"
                 variant="h6"
                 align="center"
                 className={classes.fail}
             >
-                {failed}
+                {errorMessage || successMessage}
             </Typography>
             <CssBaseline />
             <div className={classes.root}>
@@ -153,7 +171,7 @@ const SignIn = () => {
                                 color="primary"
                                 className={classes.textBox}
                                 onChange={(e) => {
-                                    setEmailLog(e.target.value);
+                                    handleEmailChange(e);
                                 }}
                             />
                             <TextField
@@ -164,14 +182,14 @@ const SignIn = () => {
                                 type="password"
                                 className={classes.textBox}
                                 onChange={(e) => {
-                                    setPasswordLog(e.target.value);
+                                    handlePasswordChange(e);
                                 }}
                             />
                             <Button
                                 className={classes.signup}
                                 variant="contained"
                                 size="large"
-                                onClick={loginUser}
+                                onClick={onSubmit}
                             >
                                 Sign in
                             </Button>

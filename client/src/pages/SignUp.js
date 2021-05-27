@@ -1,3 +1,5 @@
+import React, { useState, useContext } from "react";
+import { Link, Redirect } from "react-router-dom";
 import {
     Container,
     createMuiTheme,
@@ -8,10 +10,10 @@ import {
     Typography,
     Button,
 } from "@material-ui/core";
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import Axios from "axios";
+
 import { validEmail } from "../components/regex";
+import { publicFetch } from "../util/fetch.js";
+import { AuthContext } from "../context/AuthContext";
 
 const theme = createMuiTheme({
     palette: {
@@ -70,102 +72,132 @@ const useStyle = makeStyles({
         //fontWeight: "bold",
         color: "#155724",
         padding: "10px",
-        display: "none",
+        display: "block",
     },
     fail: {
         backgroundColor: "#f8d7da",
         //fontWeight: "bold",
         color: "#721c24",
         padding: "10px",
-        display: "none",
+        display: "block",
     },
 });
 
 const SignUp = () => {
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const authContext = useContext(AuthContext);
+    const [username, setUsername] = useState();
+    const [email, setEmail] = useState();
+    const [password, setPassword] = useState();
 
-    const [success, setSuccess] = useState("");
-    const [fail, setFail] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const [redirectOnLogin, setRedirectOnLogin] = useState(false);
+
+    const handleUsernameChange = (e) => {
+        setUsername(e.target.value);
+    };
+
+    const handleEmailChange = (e) => {
+        setEmail(e.target.value);
+    };
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+    };
 
     const validate = () => {
-        if (username === "" || email === "" || password === "") {
-            return "empty";
-        } else if (!validEmail.test(email)) {
-            return "invalid email";
+        if (!username) {
+            setErrorMessage("Username is required");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
+            return false;
         }
+        if (!email) {
+            setErrorMessage("Email is required");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
+            return false;
+        }
+        if (!password) {
+            setErrorMessage("Password is required");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
+            return false;
+        }
+        if (!validEmail.test(email)) {
+            setErrorMessage("Invalid email");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
+            return false;
+        }
+        return true;
     };
 
-    const displayFail = () => {
-        setTimeout(() => {
-            document.getElementById("failed").style.display = "block";
-        }, 0);
-        setTimeout(() => {
-            document.getElementById("failed").style.display = "none";
-        }, 2000);
+    const clearFields = () => {
+        setUsername("");
+        setEmail("");
+        setPassword("");
+        setErrorMessage("");
     };
-
-    const displaySuccess = () => {
-        setTimeout(() => {
-            document.getElementById("successfull").style.display = "block";
-        }, 0);
-        setTimeout(() => {
-            document.getElementById("successfull").style.display = "none";
-        }, 2000);
-    };
-
-    const submitUser = () => {
-        if (validate() === "empty") {
-            setFail("All Fields are required");
-            displayFail();
-        } else if (validate() === "invalid email") {
-            setFail("Invalid Email Id");
-            displayFail();
-        } else {
-            Axios.post("http://localhost:3001/api/register", {
-                username: username,
-                email: email,
-                password: password,
-            }).then((response) => {
-                if (response.data.success) {
-                    setSuccess(response.data.success);
-                    displaySuccess();
-                    document.getElementById("username").value = "";
-                    document.getElementById("email").value = "";
-                    document.getElementById("password").value = "";
-                    document.getElementById("username").focus();
-                } else if (response.data.fail) {
-                    setFail(response.data.fail);
-                    displayFail();
-                } else {
-                    setFail(response.data.message);
-                    displayFail();
-                }
-                //console.log(response.data);
-            });
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        const isValid = validate();
+        if (isValid) {
+            const credentials = {
+                username,
+                email,
+                password,
+            };
+            try {
+                const { data } = await publicFetch.post("signup", credentials);
+                authContext.setAuthState(data);
+                console.log(data);
+                setSuccessMessage(data.message);
+                clearFields();
+                setTimeout(() => {
+                    setRedirectOnLogin(true);
+                }, 1000);
+            } catch (error) {
+                setErrorMessage(error.response.data.message);
+                setTimeout(() => {
+                    setErrorMessage("");
+                }, 2000);
+            }
         }
     };
 
     const classes = useStyle();
     return (
         <React.Fragment>
-            <Typography
-                id="successfull"
-                variant="h6"
-                align="center"
-                className={classes.success}
-            >
-                {success}
-            </Typography>
-            <Typography
-                id="failed"
-                variant="h6"
-                align="center"
-                className={classes.fail}
-            >
-                {fail}
-            </Typography>
+            {authContext.isAuthenticated() && <Redirect to="/dashboard" />}
+            {redirectOnLogin && <Redirect to="/dashboard" />}
+            {successMessage && (
+                <Typography
+                    id="successfull"
+                    variant="h6"
+                    align="center"
+                    className={classes.success}
+                >
+                    {successMessage}
+                </Typography>
+            )}
+
+            {errorMessage && (
+                <Typography
+                    id="failed"
+                    variant="h6"
+                    align="center"
+                    className={classes.fail}
+                >
+                    {errorMessage}
+                </Typography>
+            )}
+
             <CssBaseline />
             <div className={classes.root}>
                 <Container>
@@ -173,12 +205,7 @@ const SignUp = () => {
                         <Typography variant="h4" className={classes.title}>
                             Sign Up Now!
                         </Typography>
-
-                        <form
-                            className={classes.form}
-                            noValidate
-                            autoComplete="off"
-                        >
+                        <form className={classes.form} onSubmit={onSubmit}>
                             <TextField
                                 id="username"
                                 label="Username"
@@ -186,7 +213,7 @@ const SignUp = () => {
                                 color="primary"
                                 className={classes.textBox}
                                 onChange={(e) => {
-                                    setUsername(e.target.value);
+                                    handleUsernameChange(e);
                                 }}
                             />
                             <TextField
@@ -196,7 +223,7 @@ const SignUp = () => {
                                 color="primary"
                                 className={classes.textBox}
                                 onChange={(e) => {
-                                    setEmail(e.target.value);
+                                    handleEmailChange(e);
                                 }}
                             />
                             <TextField
@@ -207,14 +234,14 @@ const SignUp = () => {
                                 type="password"
                                 className={classes.textBox}
                                 onChange={(e) => {
-                                    setPassword(e.target.value);
+                                    handlePasswordChange(e);
                                 }}
                             />
                             <Button
                                 className={classes.signup}
                                 variant="contained"
                                 size="large"
-                                onClick={submitUser}
+                                onClick={onSubmit}
                             >
                                 Sign up
                             </Button>
