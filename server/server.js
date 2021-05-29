@@ -75,6 +75,46 @@ app.post("/api/signup", async (req, res) => {
     }
 });
 
+// Login API
+app.post("/api/signin", async (req, res) => {
+    try {
+        const emailId = req.body.email;
+        const hashedPassword = await hashPassword(req.body.password);
+
+        const existingEmail = await User.findOne({
+            email: emailId.toLowerCase(),
+        }).lean();
+
+        if (!existingEmail) {
+            return res
+                .status(400)
+                .json({ message: "Email Id does not exists" });
+        }
+
+        const isMatch = verifyPassword(existingEmail.password, hashedPassword);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Password dosen't match" });
+        }
+
+        const token = createToken(existingEmail);
+        const { username, email, role } = existingEmail;
+        const userInfo = {
+            username,
+            email,
+            role,
+        };
+        return res.json({
+            message: "Login successful!",
+            token,
+            userInfo,
+        });
+    } catch (err) {
+        return res.status(400).json({
+            message: "There was a problem logging into your account",
+        });
+    }
+});
+
 async function connect() {
     try {
         mongoose.Promise = global.Promise;

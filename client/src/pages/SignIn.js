@@ -67,12 +67,19 @@ const useStyle = makeStyles({
         margin: "20px 0px 0px 0px",
         color: "#0466C8",
     },
+    success: {
+        backgroundColor: "#d4edda",
+        //fontWeight: "bold",
+        color: "#155724",
+        padding: "10px",
+        display: "block",
+    },
     fail: {
         backgroundColor: "#f8d7da",
         //fontWeight: "bold",
         color: "#721c24",
         padding: "10px",
-        display: "none",
+        display: "block",
     },
 });
 
@@ -97,14 +104,23 @@ const SignIn = () => {
     const validate = () => {
         if (!email) {
             setErrorMessage("Email is required");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
             return false;
         }
         if (!password) {
             setErrorMessage("Password is required");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
             return false;
         }
         if (!validEmail.test(email)) {
             setErrorMessage("Invalid email");
+            setTimeout(() => {
+                setErrorMessage("");
+            }, 2000);
             return false;
         }
         return true;
@@ -133,7 +149,12 @@ const SignIn = () => {
                 setTimeout(() => {
                     setRedirectOnLogin(true);
                 }, 1000);
-            } catch (error) {}
+            } catch (error) {
+                setErrorMessage(error.response.data.message);
+                setTimeout(() => {
+                    setErrorMessage("");
+                }, 2000);
+            }
         }
     };
 
@@ -143,14 +164,27 @@ const SignIn = () => {
             {authContext.isAuthenticated() && <Redirect to="/dashboard" />}
 
             {redirectOnLogin && <Redirect to="/dashboard" />}
-            <Typography
-                id="failed"
-                variant="h6"
-                align="center"
-                className={classes.fail}
-            >
-                {errorMessage || successMessage}
-            </Typography>
+            {successMessage && (
+                <Typography
+                    id="successfull"
+                    variant="h6"
+                    align="center"
+                    className={classes.success}
+                >
+                    {successMessage}
+                </Typography>
+            )}
+
+            {errorMessage && (
+                <Typography
+                    id="failed"
+                    variant="h6"
+                    align="center"
+                    className={classes.fail}
+                >
+                    {errorMessage}
+                </Typography>
+            )}
             <CssBaseline />
             <div className={classes.root}>
                 <Container>

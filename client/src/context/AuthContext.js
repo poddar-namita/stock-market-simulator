@@ -26,7 +26,7 @@ const AuthProvider = ({ children }) => {
             token: null,
             userInfo: {},
         });
-        history.push("/login");
+        history.push("signin");
     };
 
     const isAuthenticated = () => {
