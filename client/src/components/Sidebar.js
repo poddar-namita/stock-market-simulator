@@ -12,13 +12,14 @@ import {
 import { IconContext } from "react-icons";
 import { List } from "@material-ui/core";
 import { AuthContext } from "../context/AuthContext";
+import clsx from "clsx";
 
 const Sidebar = () => {
     const authContext = useContext(AuthContext);
     const [selectedIndex, setSelectedIndex] = useState(1);
     const handleListItemClick = (event, index) => {
         setSelectedIndex(index);
-        console.log(event + index);
+        console.log(event);
         if (index === 4) {
             authContext.logout();
         }
@@ -29,16 +30,19 @@ const Sidebar = () => {
             <IconContext.Provider value={{ size: "2em", color: "black" }}>
                 <div>
                     <List>
-                        <ListItem
-                            button
-                            style={{ paddingBottom: "2em", paddingTop: "2em" }}
-                            onClick={(event) => handleListItemClick(event, 0)}
-                        >
-                            <ListItemIcon>
-                                <MdDashboard />
-                            </ListItemIcon>
-                            <ListItemText primary="Dashboard" />
-                        </ListItem>
+                        <div className="py-4">
+                            <ListItem
+                                button
+                                onClick={(event) =>
+                                    handleListItemClick(event, 0)
+                                }
+                            >
+                                <ListItemIcon>
+                                    <MdDashboard />
+                                </ListItemIcon>
+                                <ListItemText primary="Dashboard" />
+                            </ListItem>
+                        </div>
                         <ListItem
                             button
                             style={{ paddingBottom: "2em", paddingTop: "2em" }}

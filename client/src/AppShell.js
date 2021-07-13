@@ -1,10 +1,9 @@
 import React from "react";
-import Navbar from "./components/Navbar";
 
 const AppShell = ({ children }) => {
     return (
         <>
-            <Navbar />
+            <div>{children}</div>
             {/*<div className="flex">
                 <div className="sm:w-64 px-4 sm:px-0 pt-6 bg-custom-color">
                     <div>

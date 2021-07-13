@@ -88,7 +88,7 @@ const SignIn = () => {
     const [email, setEmail] = useState();
     const [password, setPassword] = useState();
 
-    const [successMessage, setSuccessMessage] = useState("");
+    // const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
     const [redirectOnLogin, setRedirectOnLogin] = useState(false);
@@ -141,16 +141,27 @@ const SignIn = () => {
                 password,
             };
             try {
-                const { data } = await publicFetch.post("signin", credentials);
-                authContext.setAuthState(data);
-                console.log(data);
-                setSuccessMessage(data.message);
-                clearFields();
-                setTimeout(() => {
+                const response = await publicFetch.post(
+                    "auth/login",
+                    credentials
+                );
+                console.log(response);
+                if (response.data.status === "fail") {
+                    setErrorMessage(response.data.message);
+                    setTimeout(() => {
+                        setErrorMessage("");
+                    }, 2000);
+                } else {
+                    authContext.setAuthState(response.data);
+                    clearFields();
+                    // setTimeout(() => {
+                    //     setRedirectOnLogin(true);
+                    // }, 1000);
                     setRedirectOnLogin(true);
-                }, 1000);
+                }
+                // setSuccessMessage(data.message);
             } catch (error) {
-                setErrorMessage(error.response.data.message);
+                setErrorMessage("Front end error message");
                 setTimeout(() => {
                     setErrorMessage("");
                 }, 2000);
@@ -164,7 +175,7 @@ const SignIn = () => {
             {authContext.isAuthenticated() && <Redirect to="/dashboard" />}
 
             {redirectOnLogin && <Redirect to="/dashboard" />}
-            {successMessage && (
+            {/* {successMessage && (
                 <Typography
                     id="successfull"
                     variant="h6"
@@ -173,7 +184,7 @@ const SignIn = () => {
                 >
                     {successMessage}
                 </Typography>
-            )}
+            )} */}
 
             {errorMessage && (
                 <Typography
